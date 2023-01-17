@@ -1,10 +1,9 @@
 import glob
 import os
-from haven import haven_utils as hu
-import SimpleITK as sitk
+# from haven import haven_utils as hu
+from utils import file_utils as hu
 import numpy as np
 from skimage.segmentation import watershed, find_boundaries
-from segmentation._watershed import watershed as watershed_p
 import matplotlib.pyplot as plt
 import skimage.io as sio
 

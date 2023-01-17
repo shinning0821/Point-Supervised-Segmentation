@@ -1,5 +1,5 @@
-from haven import haven_chk as hc
-from haven import haven_utils as hu
+import chk as hc
+import utils as hu
 import pandas as pd
 import random
 from src import models
@@ -8,7 +8,7 @@ from torch.backends import cudnn
 from torch.utils.data import DataLoader
 import torch
 import albumentations as A
-from src.datasets import HEDataset, HEDataset_Fast
+from src.datasets import HEDataset, HEDataset_Fast,ConsepDataset,ConsepDataset_Fast
 import glob
 import os
 import numpy as np
@@ -45,12 +45,12 @@ def trainval(exp_dict, savedir_base, datadir, reset=False, num_workers=0):
     # train set
     
     data_transform = A.Compose([A.Flip(p=0.3),
-                                A.IAAAffine(p=0.3),
+                                A.Affine(p=0.3),
                                 A.Rotate(p=0.3),
                                 A.HueSaturationValue(hue_shift_limit=10, sat_shift_limit=15, val_shift_limit=10, p=0.3),
                                 A.GaussianBlur(3, p=0.3),
                                 A.GaussNoise(30, p=0.3)],
-                               keypoint_params=A.KeypointParams(format='xy'),
+                               keypoint_params=A.KeypointParams(format='yx'),
                                additional_targets={'mask0': 'mask',
                                                    'mask1': 'mask',
                                                    'mask2': 'mask',
@@ -63,7 +63,7 @@ def trainval(exp_dict, savedir_base, datadir, reset=False, num_workers=0):
     
     # random.seed(20201009)
     random_seed = random.randint(0, 20201009)
-    train_set = HEDataset_Fast(data_dir=datadir,
+    train_set = ConsepDataset_Fast(data_dir=datadir,
                                n_classes=exp_dict["n_classes"],
                                transform=data_transform,
                                option="Train",
@@ -77,7 +77,7 @@ def trainval(exp_dict, savedir_base, datadir, reset=False, num_workers=0):
                                additional_targets={'mask0': 'mask',
                                                    'mask1': 'mask'})
     # val set
-    val_set = HEDataset(data_dir=datadir,
+    val_set = ConsepDataset(data_dir=datadir,
                         transform=test_transform,
                         option="Validation")
 
@@ -86,7 +86,7 @@ def trainval(exp_dict, savedir_base, datadir, reset=False, num_workers=0):
                             num_workers=num_workers)
     
     # test set
-    test_set = HEDataset(data_dir=datadir,
+    test_set = ConsepDataset(data_dir=datadir,
                          transform=test_transform,
                          option="Test")
 
