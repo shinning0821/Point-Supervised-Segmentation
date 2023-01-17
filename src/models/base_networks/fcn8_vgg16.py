@@ -2,7 +2,6 @@
 import torch.nn as nn
 import torchvision
 import torch
-from skimage import morphology as morph
 import numpy as np
 
 import torch.utils.model_zoo as model_zoo
@@ -21,6 +20,7 @@ class FCN8_VGG16(nn.Module):
         self.conv1_2 = conv3x3(64, 64)
         
         self.conv2_1 = conv3x3(64, 128)
+
         self.conv2_2 = conv3x3(128, 128)
         
         self.conv3_1 = conv3x3(128, 256)

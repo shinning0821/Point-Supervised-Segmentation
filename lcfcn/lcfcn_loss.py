@@ -2,8 +2,7 @@ import torch
 import skimage
 import torch.nn.functional as F
 import numpy as np
-from skimage.morphology import watershed
-from skimage.segmentation import find_boundaries
+from skimage.segmentation import find_boundaries,new_watershed
 from scipy import ndimage
 from skimage import morphology as morph
 # from skimage.morphology import watershed
@@ -176,7 +175,7 @@ def watersplit(_probs, _points):
     points = points.astype(float)
 
     probs = ndimage.black_tophat(_probs.copy(), 7)
-    seg = watershed(probs, points)
+    seg = new_watershed(probs, points)
 
     return find_boundaries(seg)
 

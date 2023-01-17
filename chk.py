@@ -2,7 +2,7 @@ import shutil
 import os
 import torch
 
-from . import utils as hu
+import utils as hu
 
 
 def delete_experiment(savedir, backup_flag=False):

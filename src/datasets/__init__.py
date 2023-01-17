@@ -341,7 +341,7 @@ class ConsepDataset_Fast(Dataset):
         self.data_dir = data_dir
         self.n_classes = n_classes
         self.option = option
-        self.files_no = len(glob.glob(os.path.join(self.data_dir, option, "Norms", "*.png")))
+        self.files_no = len(glob.glob(os.path.join(self.data_dir, option, "Images", "*.png")))
         self.obj_option = obj_option
         self.patch_size = patch_size
         self.bkg_option = bkg_option
@@ -351,7 +351,7 @@ class ConsepDataset_Fast(Dataset):
             np.random.seed(random_seed)
             self.random_seeds = np.random.randint(0, self.augmul * self.files_no * 100,
                                                   (self.augmul * self.files_no,))
-            self.files_name = os.listdir(os.path.join(self.data_dir, self.option, "Images"))
+        self.files_name = os.listdir(os.path.join(self.data_dir, self.option, "Images"))
 
     def __getitem__(self, ind):
         real_ind = ind % self.files_no + 1
@@ -450,8 +450,8 @@ class ConsepDataset_Fast(Dataset):
         file_reader.SetFileName(file_list[0])
         file_reader.ReadImageInformation()
         image_size = file_reader.GetSize()
+        
         extractindex = [int((img_dim-self.patch_size)*random_) for img_dim, random_ in zip(image_size, random_state)]
-
         file_reader.SetExtractIndex(extractindex)
         file_reader.SetExtractSize([self.patch_size, self.patch_size])
 

@@ -1,5 +1,5 @@
-import chk as hc
-import utils as hu
+from haven import haven_chk as hc
+from haven import haven_utils as hu
 import pandas as pd
 import random
 from src import models
@@ -8,6 +8,8 @@ from torch.backends import cudnn
 from torch.utils.data import DataLoader
 import torch
 import albumentations as A
+
+
 from src.datasets import HEDataset, HEDataset_Fast,ConsepDataset,ConsepDataset_Fast
 import glob
 import os
@@ -50,16 +52,10 @@ def trainval(exp_dict, savedir_base, datadir, reset=False, num_workers=0):
                                 A.HueSaturationValue(hue_shift_limit=10, sat_shift_limit=15, val_shift_limit=10, p=0.3),
                                 A.GaussianBlur(3, p=0.3),
                                 A.GaussNoise(30, p=0.3)],
-                               keypoint_params=A.KeypointParams(format='yx'),
-                               additional_targets={'mask0': 'mask',
-                                                   'mask1': 'mask',
-                                                   'mask2': 'mask',
-                                                   'keypoints0': 'keypoints',
-                                                   'keypoints1': 'keypoints',
-                                                   'keypoints2': 'keypoints',
-                                                   'keypoints3': 'keypoints',
-                                                   'keypoints4': 'keypoints',
-                                                   'keypoints5': 'keypoints'})
+                                keypoint_params=A.KeypointParams(format='yx'),
+                                additional_targets={'mask0': 'mask',
+                                                    'mask1': 'mask',
+                                                    'mask2': 'mask'})
     
     # random.seed(20201009)
     random_seed = random.randint(0, 20201009)
@@ -68,9 +64,10 @@ def trainval(exp_dict, savedir_base, datadir, reset=False, num_workers=0):
                                transform=data_transform,
                                option="Train",
                                random_seed=random_seed,
-                               obj_option=exp_dict["obj"],
-                               patch_size=exp_dict["patch_size"],
-                               bkg_option=exp_dict["bkg"])
+                            #    obj_option=exp_dict["obj"],
+                               patch_size=exp_dict["patch_size"]
+                            #    bkg_option=exp_dict["bkg"]
+                               )
 
     test_transform = A.Compose([A.Resize(1024, 1024)],
                                keypoint_params=A.KeypointParams(format='xy'),
@@ -79,7 +76,7 @@ def trainval(exp_dict, savedir_base, datadir, reset=False, num_workers=0):
     # val set
     val_set = ConsepDataset(data_dir=datadir,
                         transform=test_transform,
-                        option="Validation")
+                        option="Test")
 
     val_loader = DataLoader(val_set,
                             batch_size=1,
@@ -177,23 +174,23 @@ if __name__ == "__main__":
     parser.add_argument("-r", "--reset",  default=0, type=int)
 #     parser.add_argument("-ei", "--exp_id", default=None)
 #     parser.add_argument("-j", "--run_jobs", default=0, type=int)
-    parser.add_argument("-nw", "--num_workers", type=int, default=0)
+    parser.add_argument("-nw", "--num_workers", type=int, default=1)
 
     args = parser.parse_args()
-
     # Collect experiments
     # ===================
     
     exp_dict = hu.load_json(args.exp_dict)
-    # do trainval
-    folddir_10 = glob.glob(os.path.join(args.datadir, '*_fold'))
+#     # do trainval
+#     folddir_10 = glob.glob(os.path.join(args.datadir, '*_fold'))
 
-    for folddir in folddir_10:
-        savedir_base = os.path.join(folddir,'Result')
-        os.makedirs(savedir_base,exist_ok=True)
-#         trainval(exp_dict, savedir_base, datadir, folddir, reset=True, num_workers=25)
-        trainval(exp_dict=exp_dict,
-                savedir_base=savedir_base,
-                datadir=args.datadir,
-                reset=args.reset,
-                num_workers=args.num_workers)
+#     for folddir in folddir_10:
+#         savedir_base = os.path.join(folddir,'Result')
+#         os.makedirs(savedir_base,exist_ok=True)
+# #         trainval(exp_dict, savedir_base, datadir, folddir, reset=True, num_workers=25)
+    savedir_base = os.path.join(args.datadir,'Result')
+    trainval(exp_dict=exp_dict,
+            savedir_base=savedir_base,
+            datadir=args.datadir,
+            reset=args.reset,
+            num_workers=args.num_workers)

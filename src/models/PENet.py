@@ -9,14 +9,11 @@ from sklearn.metrics import confusion_matrix
 import skimage
 from lcfcn import lcfcn_loss
 from src import models
-from haven import haven_img as hi
 from scipy import ndimage
 from PIL import Image
 from PIL import ImageFont
 from PIL import ImageDraw 
 import cv2
-from haven import haven_img
-from haven import haven_utils as hu
 from src.models import base_networks, metrics
 import segmentation_models_pytorch as smp
 import torch.nn as nn
