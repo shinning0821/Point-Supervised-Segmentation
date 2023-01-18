@@ -14,6 +14,7 @@ from src.datasets import HEDataset, HEDataset_Fast,ConsepDataset,ConsepDataset_F
 import glob
 import os
 import numpy as np
+os.environ["CUDA_VISIBLE_DEVICES"] = "1"
 
 seed = 20201009
 torch.manual_seed(seed)
@@ -168,9 +169,9 @@ def trainval(exp_dict, savedir_base, datadir, reset=False, num_workers=0):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
 
-    parser.add_argument('-e', '--exp_dict', required=True, type=str)
+    parser.add_argument('-e', '--exp_dict', required=False,type=str,default = './Experiment_Exp/exp_config_mynet_1.json')
 #     parser.add_argument('-sb', '--savedir_base', required=True)
-    parser.add_argument('-d', '--datadir', required=True)
+    parser.add_argument('-d', '--datadir', required=False, default = './CoNSeP/' )
     parser.add_argument("-r", "--reset",  default=0, type=int)
 #     parser.add_argument("-ei", "--exp_id", default=None)
 #     parser.add_argument("-j", "--run_jobs", default=0, type=int)

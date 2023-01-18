@@ -378,6 +378,7 @@ class ConsepDataset_Fast(Dataset):
                                          mask2=region)
             image = transformed["image"]
             points["1"] = np.array(transformed["keypoints"]).astype(int)
+            
             # points["2"] = np.array(transformed["keypoints0"]).astype(int)
             # points["3"] = np.array(transformed["keypoints1"]).astype(int)
             # points["4"] = np.array(transformed["keypoints2"]).astype(int)
