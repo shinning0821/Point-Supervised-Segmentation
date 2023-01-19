@@ -1,5 +1,5 @@
 {
-    "batch_size": 4,
+    "batch_size": 16,
     "max_epoch": 100,
     "model": {
         "name": "ponet",

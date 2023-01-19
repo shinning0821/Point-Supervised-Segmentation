@@ -166,6 +166,7 @@ class PONet(torch.nn.Module):
         masks = batch["gt"].long().to(self.device)
         regions = batch["region"].to(self.device)
         logits = self.model_base.forward(images)
+        
 
         loss = self.lam_full * F.cross_entropy(logits, masks) + \
             lcfcn_loss.compute_weighted_crossentropy(logits, points, bkgs,

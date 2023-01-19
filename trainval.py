@@ -14,7 +14,6 @@ from src.datasets import HEDataset, HEDataset_Fast,ConsepDataset,ConsepDataset_F
 import glob
 import os
 import numpy as np
-os.environ["CUDA_VISIBLE_DEVICES"] = "1"
 
 seed = 20201009
 torch.manual_seed(seed)

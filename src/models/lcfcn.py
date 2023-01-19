@@ -12,9 +12,9 @@ from scipy import ndimage
 from PIL import Image
 from PIL import ImageFont
 from PIL import ImageDraw 
-# from haven import haven_utils as hu
-# from haven import haven_img as hi
-# from lcfcn import lcfcn_loss
+from haven import haven_utils as hu
+from haven import haven_img as hi
+from lcfcn import lcfcn_loss
 
 from . import base_networks, metrics
 

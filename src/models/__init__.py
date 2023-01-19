@@ -5,7 +5,7 @@ import pandas as pd
 import pickle, os
 import numpy as np
 from . import base_networks
-# from haven import haven_results as hr 
+from haven import haven_results as hr 
 from . import lcfcn
 from . import PENet
 from . import PONet

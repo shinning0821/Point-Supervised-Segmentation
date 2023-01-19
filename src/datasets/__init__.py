@@ -6,14 +6,14 @@ import torch
 import glob,os
 import skimage.io as sio
 import random
-from utils import file_utils as hu
+from haven import haven_utils as hu
 import SimpleITK as sitk
 
 
 class HEDataset(Dataset):
     
     def __init__(self, data_dir, transform=None, option="Train",
-                 random_seed=123, n_classes=1, augmul=1, obj_option=None):
+                 random_seed=123, n_classes=2, augmul=1, obj_option=None):
 
         self.transform = transform
         self.data_dir = data_dir
@@ -99,7 +99,7 @@ class HEDataset(Dataset):
 class ConsepDataset(Dataset):
     
     def __init__(self, data_dir, transform=None, option="Train",
-                 random_seed=123, n_classes=1, augmul=1, obj_option=None):
+                 random_seed=123, n_classes=2, augmul=1, obj_option=None):
 
         self.transform = transform
         self.data_dir = data_dir
@@ -117,7 +117,7 @@ class ConsepDataset(Dataset):
 
 
     def __getitem__(self, ind):
-        real_ind = ind % self.files_no + 1
+        real_ind = ind % self.files_no 
         file_name = self.files_name
         file_name.sort()
         file_name = file_name[real_ind].split('.')[0]
@@ -171,7 +171,8 @@ class ConsepDataset(Dataset):
                 counts += len(v)
                 if len(v) > 0:
                     point_label[v[:, 0], v[:, 1]] = int(k)
-
+            
+            mask = np.clip(mask,0,1)
             return {'images': torch.FloatTensor(image.transpose(2, 0, 1))/255.0,
                     'points': torch.FloatTensor(point_label),
                     'bkg': torch.FloatTensor(bkg),
@@ -215,7 +216,6 @@ class HEDataset_Fast(Dataset):
 
     def __getitem__(self, ind):
         real_ind = ind % self.files_no + 1
-
         if self.transform:
             file_list = self.get_train_names(real_ind)
             image, obj, bkg, mask, region, points = self.random_read_subregion(file_list, random_seed=self.random_seeds[ind])
@@ -354,8 +354,7 @@ class ConsepDataset_Fast(Dataset):
         self.files_name = os.listdir(os.path.join(self.data_dir, self.option, "Images"))
 
     def __getitem__(self, ind):
-        real_ind = ind % self.files_no + 1
-
+        real_ind = ind % self.files_no 
         if self.transform:
             file_list = self.get_train_names(real_ind)
             image, obj, bkg, mask, region, points = self.random_read_subregion(file_list, random_seed=self.random_seeds[ind])
@@ -393,6 +392,7 @@ class ConsepDataset_Fast(Dataset):
             point_label = np.zeros_like(mask)
             counts = 0
 
+            mask = np.clip(mask,0,1)
             for k, v in points.items():
                 counts += len(v)
                 if len(v) > 0:
@@ -434,7 +434,6 @@ class ConsepDataset_Fast(Dataset):
         file_name = self.files_name
         file_name.sort()
         file_name = file_name[number].split('.')[0]
-
         return os.path.join(self.data_dir, self.option, "Images", file_name+".png"), \
                os.path.join(self.data_dir, self.option, "Objs", file_name+".png"), \
                os.path.join(self.data_dir, self.option, "Bkgs", file_name+".png"), \
