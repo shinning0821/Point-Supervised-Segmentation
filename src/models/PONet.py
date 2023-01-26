@@ -167,12 +167,17 @@ class PONet(torch.nn.Module):
         regions = batch["region"].to(self.device)
         logits = self.model_base.forward(images)
         
-
         loss = self.lam_full * F.cross_entropy(logits, masks) + \
-            lcfcn_loss.compute_weighted_crossentropy(logits, points, bkgs,
+             lcfcn_loss.compute_weighted_crossentropy(logits, points, bkgs,
                                                      weights=self.lam_point,
                                                      bkg_enable=self.bkg_enable) + \
-            self.lam_obj * lcfcn_loss.compute_obj_loss(logits, objs, regions)
+             self.lam_obj * lcfcn_loss.compute_obj_loss(logits, objs, regions)
+
+        # print(self.lam_full,F.cross_entropy(logits, masks))
+        # print(lcfcn_loss.compute_weighted_crossentropy(logits, points, bkgs,
+        #                                              weights=self.lam_point,
+        #                                              bkg_enable=self.bkg_enable))
+        # print(self.lam_obj,lcfcn_loss.compute_obj_loss(logits, objs, regions))
 
         loss.backward()
 

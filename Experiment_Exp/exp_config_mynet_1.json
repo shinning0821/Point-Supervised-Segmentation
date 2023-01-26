@@ -7,7 +7,7 @@
 	    "name":"fpn",
             "pretrained":0
         },
-	"weight":[0,[1,0],1],
+	"weight":[1,[1,0],1],
 	"bkg_enable":1,
         "lr": 0.001,
         "optimizer": "adam"

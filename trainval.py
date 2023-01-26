@@ -70,7 +70,7 @@ def trainval(exp_dict, savedir_base, datadir, reset=False, num_workers=0):
                                )
 
     test_transform = A.Compose([A.Resize(1024, 1024)],
-                               keypoint_params=A.KeypointParams(format='xy'),
+                               keypoint_params=A.KeypointParams(format='yx'),
                                additional_targets={'mask0': 'mask',
                                                    'mask1': 'mask'})
     # val set

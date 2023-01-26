@@ -173,6 +173,8 @@ class ConsepDataset(Dataset):
                     point_label[v[:, 0], v[:, 1]] = int(k)
             
             mask = np.clip(mask,0,1)
+            obj = obj / 255 
+
             return {'images': torch.FloatTensor(image.transpose(2, 0, 1))/255.0,
                     'points': torch.FloatTensor(point_label),
                     'bkg': torch.FloatTensor(bkg),
@@ -393,6 +395,8 @@ class ConsepDataset_Fast(Dataset):
             counts = 0
 
             mask = np.clip(mask,0,1)
+            obj = obj / 255
+            
             for k, v in points.items():
                 counts += len(v)
                 if len(v) > 0:
