@@ -13,6 +13,7 @@ from segmentation._watershed import watershed
 
 SMOOTH = 1e-6
 
+
 edge_filter = sobel
 
 data_dir = "./CoNSeP"

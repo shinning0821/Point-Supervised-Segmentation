@@ -4,11 +4,14 @@ import os
 import tqdm
 from lcfcn import lcfcn_loss
 from src.models import base_networks, metrics
-import segmentation_models_pytorch as smp
+import model_base as smp
 import torch.nn as nn
 from torch.optim.lr_scheduler import ReduceLROnPlateau
 import matplotlib.pyplot as plt
-
+# from model_base.decoders.mynet.losses import DetLoss
+from model_base.decoders.mynet.cam import GradCAM,SemanticSegmentationTarget
+from skimage import img_as_float 
+import numpy as np
 
 def get_model_base(model_base_dict, in_channels=3, n_classes=2):
     if model_base_dict['pretrained']:
@@ -16,7 +19,7 @@ def get_model_base(model_base_dict, in_channels=3, n_classes=2):
     else:
         encoder_weights = None
     if model_base_dict['name'].lower() == 'fpn':
-        return smp.FPN(
+        return smp.Newnet(
             'resnet50',
             in_channels=in_channels,
             classes=n_classes,
@@ -63,6 +66,7 @@ class PONet(torch.nn.Module):
         self.exp_dict = exp_dict
         self.model_base = get_model_base(exp_dict["model_base"], n_classes=self.n_classes)
         self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+
 
         if torch.cuda.device_count() > 1:
             print("Let's use", torch.cuda.device_count(), "GPUs!")
@@ -165,20 +169,33 @@ class PONet(torch.nn.Module):
         objs = batch["obj"].to(self.device)
         masks = batch["gt"].long().to(self.device)
         regions = batch["region"].to(self.device)
-        logits = self.model_base.forward(images)
+
+        logits,classification = self.model_base.forward(images)
+        det_prob = classification.sigmoid()
         
-        loss = self.lam_full * F.cross_entropy(logits, masks) + \
-             lcfcn_loss.compute_weighted_crossentropy(logits, points, bkgs,
+        print(torch.unique(images))
+        # print("logits:")
+        # print(torch.unique(torch.nn.functional.softmax(logits, dim=1)))
+
+        target_layers = [self.model_base.encoder.layer2]
+        normalized_masks = torch.nn.functional.softmax(logits, dim=1).cpu()
+        mask = normalized_masks[0, :, :, :].argmax(axis=0).detach().cpu().numpy()
+        mask_float = np.float32(mask == 1)
+
+        targets = [SemanticSegmentationTarget(category=1,mask = mask_float)]
+
+        with GradCAM(model=self.model_base,
+             target_layers=target_layers,
+             use_cuda=torch.cuda.is_available()) as cam:
+                grayscale_cam = cam(input_tensor=images,targets=targets)
+
+        mse_loss = torch.nn.MSELoss()
+        loss =  self.lam_full * F.cross_entropy(logits, masks) + \
+            lcfcn_loss.compute_weighted_crossentropy(logits, points, bkgs,
                                                      weights=self.lam_point,
-                                                     bkg_enable=self.bkg_enable) + \
-             self.lam_obj * lcfcn_loss.compute_obj_loss(logits, objs, regions)
-
-        # print(self.lam_full,F.cross_entropy(logits, masks))
-        # print(lcfcn_loss.compute_weighted_crossentropy(logits, points, bkgs,
-        #                                              weights=self.lam_point,
-        #                                              bkg_enable=self.bkg_enable))
-        # print(self.lam_obj,lcfcn_loss.compute_obj_loss(logits, objs, regions))
-
+                                                     bkg_enable=self.bkg_enable)  +\
+             mse_loss(det_prob[:,0,:,:],regions/255) * 0 
+            #  self.lam_obj * lcfcn_loss.compute_obj_loss(logits, objs, regions) 
         loss.backward()
 
         self.opt.step()
@@ -199,7 +216,7 @@ class PONet(torch.nn.Module):
         self.eval()
         images = batch["images"].to(self.device)
         mask = batch["gt"].to(self.device)
-        logits = self.model_base.forward(images)
+        logits,classification = self.model_base.forward(images)
         prob = logits.sigmoid()
         val_loss = self.iou_pytorch(prob, mask)
 
@@ -209,7 +226,7 @@ class PONet(torch.nn.Module):
         self.eval()
         images = batch["images"].to(self.device)
         mask = batch["gt"].to(self.device)
-        logits = self.model_base.forward(images)
+        logits,classification = self.model_base.forward(images)
         prob = logits.sigmoid()
         test_loss = self.iou_pytorch(prob, mask)
         return {"testloss": test_loss.item()}
@@ -218,7 +235,7 @@ class PONet(torch.nn.Module):
         self.eval()
         images = batch["images"].to(self.device)
         mask = batch["gt"].to(self.device)
-        logits = self.model_base.forward(images)
+        logits,classification = self.model_base.forward(images)
         prob = logits.sigmoid()
         seg = torch.argmax(prob, dim=1)
         #         import pdb

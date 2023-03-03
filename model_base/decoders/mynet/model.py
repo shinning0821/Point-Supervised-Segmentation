@@ -170,10 +170,10 @@ class Newnet(MultiHeadModel):
             upsampling=upsampling,
         )
 
-        # 用于在训练的过程中同步生成cam
-        target_layers = [self.encoder.layer4]
-        self.activations_and_grads = ActivationsAndGradients(
-            self.encoder, target_layers, reshape_transform = None)
+        # # 用于在训练的过程中同步生成cam
+        # target_layers = [self.encoder.layer4]
+        # self.activations_and_grads = ActivationsAndGradients(
+        #     self.encoder, target_layers, reshape_transform = None)
         
         if aux_params is not None:
             self.classification_head = ClassificationHead(in_channels=self.encoder.out_channels[-1], **aux_params)

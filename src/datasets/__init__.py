@@ -365,7 +365,7 @@ class ConsepDataset_Fast(Dataset):
 
             random.seed(random_seed)
 
-            transformed = transformed = self.transform(image=image,
+            transformed = self.transform(image=image,
                                          keypoints=points["1"],
                                         #  keypoints0=points["2"],
                                         #  keypoints1=points["3"],
