@@ -97,14 +97,15 @@ class PONet(torch.nn.Module):
     def train_on_loader(self, train_loader):
         self.train()
         n_batches = len(train_loader)
-        train_meter = metrics.Meter()
+        train_meter = metrics.TrainMeter()
 
         pbar = tqdm.tqdm(total=n_batches)
         for batch in train_loader:
             score_dict = self.train_on_batch(batch)
-            train_meter.add(score_dict['train_loss'], 1)
+            train_meter.add_all(score_dict, 1)
 
-            pbar.set_description("Training Loss: %.4f" % train_meter.get_avg_score())
+            pbar.set_description("Training Loss: %.4f, det_loss:  %.4f, seg_loss:  %.4f, cam_pos:  %.4f, cam_neg:  %.4f" 
+            % train_meter.get_avg_all())
             pbar.update(1)
 
         self.scheduler.step(train_meter.get_avg_score())
@@ -161,46 +162,51 @@ class PONet(torch.nn.Module):
     def train_on_batch(self, batch, **extras):
         self.opt.zero_grad()
         self.train()
-
         images = batch["images"].to(self.device)
-        # print(images[30,0,56,2])
-        points = batch["points"].long().to(self.device)
-        bkgs = batch["bkg"].long().to(self.device)
+        points = batch["points"].to(self.device)
+        bkgs = batch["bkg"].to(self.device)
         objs = batch["obj"].to(self.device)
         masks = batch["gt"].long().to(self.device)
         regions = batch["region"].to(self.device)
 
-        logits,classification = self.model_base.forward(images)
-        det_prob = classification.sigmoid()
-        
-        print(torch.unique(images))
-        # print("logits:")
-        # print(torch.unique(torch.nn.functional.softmax(logits, dim=1)))
+        # 在产生cam的过程中同步产生，如果关闭cam的话取消注释即可
+        # logits,classification = self.model_base.forward(images)
 
-        target_layers = [self.model_base.encoder.layer2]
-        normalized_masks = torch.nn.functional.softmax(logits, dim=1).cpu()
-        mask = normalized_masks[0, :, :, :].argmax(axis=0).detach().cpu().numpy()
-        mask_float = np.float32(mask == 1)
-
-        targets = [SemanticSegmentationTarget(category=1,mask = mask_float)]
+        target_layers = [self.model_base.encoder.layer4]
 
         with GradCAM(model=self.model_base,
              target_layers=target_layers,
              use_cuda=torch.cuda.is_available()) as cam:
-                grayscale_cam = cam(input_tensor=images,targets=targets)
+                grayscale_cam,logits,classification = cam(input_tensor=images)
 
-        mse_loss = torch.nn.MSELoss()
-        loss =  self.lam_full * F.cross_entropy(logits, masks) + \
-            lcfcn_loss.compute_weighted_crossentropy(logits, points, bkgs,
+        det_prob = classification.sigmoid()
+        det_loss = torch.nn.MSELoss()
+        cam_loss1 = torch.nn.MSELoss()
+        cam_loss2 = torch.nn.MSELoss()
+
+        fn = grayscale_cam.clone()
+        fn[torch.where(points==0)] = 0
+
+        fp = grayscale_cam.clone()
+        fp[torch.where(bkgs.clone()==0)] = 1
+
+        cl1 = cam_loss1(fn,points) * 10
+        cl2 = cam_loss2(fp,1-bkgs) * 10
+
+        full_loss = self.lam_full * F.cross_entropy(logits, masks) 
+        seg_loss = lcfcn_loss.compute_weighted_crossentropy(logits, points.long(), bkgs.long(),
                                                      weights=self.lam_point,
-                                                     bkg_enable=self.bkg_enable)  +\
-             mse_loss(det_prob[:,0,:,:],regions/255) * 0 
+                                                     bkg_enable=self.bkg_enable)
+        obj_loss = det_loss(det_prob[:,0,:,:],regions/255)
+        loss =  full_loss + seg_loss + obj_loss + cl1 + cl2
             #  self.lam_obj * lcfcn_loss.compute_obj_loss(logits, objs, regions) 
         loss.backward()
-
         self.opt.step()
-
-        return {"train_loss": loss.item()}
+        return {"train_loss": loss.item(),
+        "det_loss":obj_loss.item(),
+        "seg_loss":seg_loss.item(),
+        "cam_pos":cl1.item(),
+        "cam_neg":cl2.item()}
 
     def get_state_dict(self):
         state_dict = {"model": self.model_base.state_dict(),

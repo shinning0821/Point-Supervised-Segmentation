@@ -337,7 +337,7 @@ class HEDataset_Fast(Dataset):
 class ConsepDataset_Fast(Dataset):
 
     def __init__(self, data_dir, transform=None, option="Train",
-                 random_seed=123, n_classes=1, augmul=500, patch_size=None, obj_option="Objs", bkg_option="Bkgs"):
+                 random_seed=123, n_classes=1, augmul=50, patch_size=None, obj_option="Objs", bkg_option="Bkgs"):
 
         self.transform = transform
         self.data_dir = data_dir
@@ -347,7 +347,6 @@ class ConsepDataset_Fast(Dataset):
         self.obj_option = obj_option
         self.patch_size = patch_size
         self.bkg_option = bkg_option
-
         if self.transform:
             self.augmul = augmul
             np.random.seed(random_seed)

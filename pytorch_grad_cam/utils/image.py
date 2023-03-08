@@ -4,6 +4,7 @@ from matplotlib.lines import Line2D
 import cv2
 import numpy as np
 import torch
+import torch.nn.functional as F
 from torchvision.transforms import Compose, Normalize, ToTensor
 from typing import List, Dict
 import math
@@ -166,8 +167,20 @@ def scale_cam_image(cam, target_size=None):
             img = cv2.resize(img, target_size)
         result.append(img)
     result = np.float32(result)
-
     return result
+
+def scale_cam_tensor(cam, target_size=None):
+    # for i in range(cam.shape[0]):
+    #     cam[i] = cam[i] - torch.min(cam[i])
+    #     cam[i] = cam[i] / (1e-7 + torch.max(cam[i]))
+    cam = cam - torch.min(cam)
+    cam = cam / (1e-7 + torch.max(cam))
+        
+    if target_size is not None:
+        cam = cam[None,:,:]
+        cam = F.interpolate(cam, size=target_size, mode='nearest')[0,:,:]
+    
+    return cam
 
 
 def scale_accross_batch_and_channels(tensor, target_size):

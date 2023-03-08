@@ -77,15 +77,16 @@ class BaseCAM:
             target_categories = np.argmax(outputs.cpu().data.numpy(), axis=-1)
             targets = [ClassifierOutputTarget(
                 category) for category in target_categories]
-
+        
         if self.uses_gradients:
             self.model.zero_grad()
             loss = sum([target(output)
                        for target, output in zip(targets, outputs)])
-            loss.backward(retain_graph=True)
+            loss.backward(retain_graph=False)
 
         # In most of the saliency attribution papers, the saliency is
         # computed with a single target layer.
+
         # Commonly it is the last convolutional layer.
         # Here we support passing a list with multiple target layers.
         # It will compute the saliency image for every image,
@@ -124,6 +125,7 @@ class BaseCAM:
             if i < len(grads_list):
                 layer_grads = grads_list[i]
                 layer_grads = np.array(layer_grads)
+            
             cam = self.get_cam_image(input_tensor,
                                      target_layer,
                                      targets,
